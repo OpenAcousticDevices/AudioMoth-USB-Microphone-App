@@ -13,11 +13,13 @@ input[type=number]::-webkit-outer-spin-button {
 
 .table>tbody>tr>td,
 .table>tbody>tr>th {
-  border-top: none;
-  
+    border-color: transparent;
+    border-top: none;
 }
 
-.table>tbody>tr>td:not(.grey) {
+.table>tbody>tr>td,
+.table>tbody>tr>th {
+  background: #000000;
   color: #FFFFFF;
 }
 
@@ -29,11 +31,16 @@ body {
 input {
   background: #000000;
   color: #FFFFFF;
+  border: thin solid #FFFFFF;
 }
 
 select {
   background: #000000;
   color: #FFFFFF;
+}
+
+.grey {
+  color: #808080;
 }
 
 .info-display-input {
@@ -44,18 +51,10 @@ select {
   border: #FFFFFF;
 }
 
-#low-pass-filter-slider .slider-selection {
+.slider-horizontal .slider-selection {
   background: rgb(64, 100, 216);
 }
 
-#high-pass-filter-slider .slider-track {
-  background: rgb(64, 100, 216);
-}
-
-#band-pass-filter-slider .slider-selection {
-  background: rgb(64, 100, 216);
-}
-
-.grey {
-  color: #808080;
+.slider-disabled.slider-disabled .slider-selection {
+  background: rgb(101, 113, 153);
 }

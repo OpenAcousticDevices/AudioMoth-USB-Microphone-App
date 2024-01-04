@@ -9,6 +9,7 @@
 /* global XMLHttpRequest */
 
 const electron = require('electron');
+const { app } = require('@electron/remote');
 
 const pjson = require('./package.json');
 
@@ -18,8 +19,8 @@ function isOlderSemanticVersion (aVersion, bVersion) {
 
     for (let i = 0; i < aVersion.length; i++) {
 
-        const aVersionNum = aVersion[i];
-        const bVersionNum = bVersion[i];
+        const aVersionNum = parseInt(aVersion[i]);
+        const bVersionNum = parseInt(bVersion[i]);
 
         if (aVersionNum > bVersionNum) {
 
@@ -50,7 +51,7 @@ exports.checkLatestRelease = (callback) => {
 
     }
 
-    const version = electron.remote.app.getVersion();
+    const version = app.getVersion();
 
     /* Transform repository URL into release API URL */
 
@@ -73,7 +74,10 @@ exports.checkLatestRelease = (callback) => {
 
             /* Compare current version in package.json to latest version pulled from Github */
 
-            const updateNeeded = isOlderSemanticVersion(version, latestVersion);
+            const versionArray = version.split('.');
+            const latestVersionArray = latestVersion.split('.');
+
+            const updateNeeded = isOlderSemanticVersion(versionArray, latestVersionArray);
 
             callback({updateNeeded: updateNeeded, latestVersion: updateNeeded ? latestVersion : version});
 

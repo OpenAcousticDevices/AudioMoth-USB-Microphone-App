@@ -4,9 +4,6 @@
  * August 2021
  *****************************************************************************/
 
-const electron = require('electron');
-const dialog = electron.remote.dialog;
-
 const uiFiltering = require('./uiFiltering.js');
 const uiAdvanced = require('./uiAdvanced.js');
 

@@ -4,12 +4,6 @@
  * August 2021
  *****************************************************************************/
 
-const electron = require('electron');
-const dialog = electron.remote.dialog;
-const BrowserWindow = electron.remote.BrowserWindow;
-
-const ui = require('./../ui.js');
-
 const constants = require('../constants.js');
 
 const Slider = require('bootstrap-slider');

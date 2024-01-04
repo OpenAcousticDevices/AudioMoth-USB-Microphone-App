@@ -4,8 +4,6 @@
  * August 2021
  *****************************************************************************/
 
-const electron = require('electron');
-
 const enableLED = document.getElementById('enable-LED-checkbox');
 const energySaverModeCheckbox = document.getElementById('energy-saver-mode-checkbox');
 const disable48DCFilterCheckbox = document.getElementById('disable-48-dc-filter-checkbox');

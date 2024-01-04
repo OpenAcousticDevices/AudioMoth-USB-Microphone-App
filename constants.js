@@ -69,6 +69,10 @@ exports.configurations = [{
 exports.packetLengthVersions = [{
     firmwareVersion: '1.0.0',
     packetLength: 18
+},
+{
+    firmwareVersion: '1.2.0',
+    packetLength: 19
 }];
 
 const FIRMWARE_OFFICIAL_RELEASE = 0;
@@ -103,5 +107,5 @@ exports.getFirmwareClassification = (desc) => {
 
 /* Version number for the latest firmware */
 
-exports.latestFirmwareVersionArray = [1, 0, 0];
-exports.latestFirmwareVersionString = '1.0.0';
+exports.latestFirmwareVersionArray = ['1', '2', '0'];
+exports.latestFirmwareVersionString = '1.2.0';

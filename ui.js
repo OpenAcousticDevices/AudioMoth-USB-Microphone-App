@@ -8,15 +8,14 @@
 
 /* global document */
 
-const electron = require('electron');
-const menu = electron.remote.Menu;
-const ipc = electron.ipcRenderer;
+const {ipcRenderer} = require('electron');
+const { Menu } = require('@electron/remote');
 
 const nightMode = require('./nightMode.js');
 
 /* UI components */
 
-const applicationMenu = menu.getApplicationMenu();
+const applicationMenu = Menu.getApplicationMenu();
 
 /* Switch between display modes */
 
@@ -38,8 +37,8 @@ exports.toggleNightMode = toggleNightMode;
 
 exports.isNightMode = nightMode.isEnabled;
 
-ipc.on('poll-night-mode', function () {
+ipcRenderer.on('poll-night-mode', function () {
 
-    electron.ipcRenderer.send('night-mode-poll-reply', nightMode.isEnabled());
+    ipcRenderer.send('night-mode-poll-reply', nightMode.isEnabled());
 
 });

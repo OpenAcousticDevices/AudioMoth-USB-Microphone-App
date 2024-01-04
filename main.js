@@ -6,19 +6,11 @@
 
 'use strict';
 
-const electron = require('electron');
+const {app, Menu, shell, ipcMain, BrowserWindow} = require('electron');
 
-const app = electron.app;
-
-const Menu = electron.Menu;
-
-const shell = electron.shell;
-
-const ipcMain = electron.ipcMain;
+require('@electron/remote/main').initialize();
 
 const path = require('path');
-
-const BrowserWindow = electron.BrowserWindow;
 
 require('electron-debug')({
     showDevTools: true,
@@ -27,19 +19,34 @@ require('electron-debug')({
 
 var mainWindow, aboutWindow;
 
-function shrinkWindowHeight (windowHeight) {
-
-    if (process.platform === 'darwin') {
-
-        windowHeight -= 20;
-
-    } else if (process.platform === 'linux') {
-
-        windowHeight -= 20;
-
+const iconLocation = (process.platform === 'linux') ? '/build/icon.png' : '/build/icon.ico';
+const standardWindowSettings = {
+    resizable: false,
+    fullscreenable: false,
+    autoHideMenuBar: true,
+    icon: path.join(__dirname, iconLocation),
+    useContentSize: true,
+    webPreferences: {
+        enableRemoteModule: true,
+        nodeIntegration: true,
+        contextIsolation: false
     }
+};
 
-    return windowHeight;
+/* Generate settings objects for windows and progress bars */
+
+function generateSettings (width, height, title) {
+
+    const uniqueSettings = {
+        width,
+        height,
+        title
+    };
+
+    const settings = Object.assign({}, standardWindowSettings, uniqueSettings);
+    settings.parent = mainWindow;
+
+    return settings;
 
 }
 
@@ -47,35 +54,43 @@ function openAboutWindow () {
 
     if (aboutWindow) {
 
+        aboutWindow.show();
         return;
 
     }
 
-    const iconLocation = (process.platform === 'linux') ? '/build/icon.png' : '/build/icon.ico';
+    let windowWidth = 400;
+    let windowHeight = 310;
 
-    aboutWindow = new BrowserWindow({
-        width: 400,
-        height: shrinkWindowHeight(340),
-        title: 'About',
-        resizable: false,
-        fullscreenable: false,
-        icon: path.join(__dirname, iconLocation),
-        parent: mainWindow,
-        webPreferences: {
-            nodeIntegration: true
-        }
-    });
+    if (process.platform === 'linux') {
+
+        windowWidth = 395;
+        windowHeight = 310;
+
+    } else if (process.platform === 'darwin') {
+
+        windowWidth = 395;
+        windowHeight = 310;
+
+    }
+
+    const settings = generateSettings(windowWidth, windowHeight, 'About');
+    aboutWindow = new BrowserWindow(settings);
 
     aboutWindow.setMenu(null);
     aboutWindow.loadURL(path.join('file://', __dirname, '/about.html'));
 
-    aboutWindow.on('close', function () {
+    require('@electron/remote/main').enable(aboutWindow.webContents);
 
-        aboutWindow = null;
+    aboutWindow.on('close', (e) => {
+
+        e.preventDefault();
+
+        aboutWindow.hide();
 
     });
 
-    aboutWindow.webContents.on('dom-ready', function () {
+    aboutWindow.webContents.on('dom-ready', () => {
 
         mainWindow.webContents.send('poll-night-mode');
 
@@ -107,33 +122,37 @@ function toggleNightMode () {
 
 app.on('ready', function () {
 
-    const iconLocation = (process.platform === 'linux') ? '/build/icon.png' : '/build/icon.ico';
-    const windowHeight = shrinkWindowHeight(661);
+    let windowWidth = 565;
+    let windowHeight = 672;
+
+    if (process.platform === 'linux') {
+
+        windowWidth = 560;
+        windowHeight = 653;
+
+    } else if (process.platform === 'darwin') {
+
+        windowWidth = 560;
+        windowHeight = 653;
+
+    }
 
     mainWindow = new BrowserWindow({
         title: 'AudioMoth USB Microphone App',
-        width: 565,
+        width: windowWidth,
         height: windowHeight,
-        useContentSize: true,
         resizable: false,
         fullscreenable: false,
+        useContentSize: true,
         icon: path.join(__dirname, iconLocation),
         webPreferences: {
-            nodeIntegration: true
+            enableRemoteModule: true,
+            nodeIntegration: true,
+            contextIsolation: false
         }
     });
 
-    mainWindow.on('restore', function () {
-
-        /* When minimised and restored, Windows platforms alter the BrowserWindow such that the height no longer includes the menu bar */
-        /* This resize cannot be blocked so this fix resizes it, taking into account the menu change */
-        if (process.platform === 'win32') {
-
-            mainWindow.setSize(565, windowHeight + 20);
-
-        }
-
-    });
+    require('@electron/remote/main').enable(mainWindow.webContents);
 
     const menuTemplate = [{
         label: 'File',
@@ -169,6 +188,15 @@ app.on('ready', function () {
             click: function () {
 
                 mainWindow.webContents.send('update-check');
+
+            }
+        }, {
+            type: 'separator'
+        }, {
+            label: 'AudioMoth Play Website',
+            click: function () {
+
+                shell.openExternal('https://play.openacousticdevices.info/');
 
             }
         }, {

@@ -12,10 +12,9 @@
 const audiomoth = require('audiomoth-hid');
 const packetReader = require('./packetReader.js');
 
+const util = require('util');
 const electron = require('electron');
-const dialog = electron.remote.dialog;
-const Menu = electron.remote.Menu;
-const BrowserWindow = electron.remote.BrowserWindow;
+const { dialog, Menu, BrowserWindow } = require('@electron/remote');
 
 const ui = require('./ui.js');
 
@@ -25,9 +24,9 @@ const uiSettings = require('./settings/uiSettings.js');
 
 const versionChecker = require('./versionChecker.js');
 
-const UINT32_MAX = 0xFFFFFFFF;
 const UINT16_MAX = 0xFFFF;
-const SECONDS_IN_DAY = 86400;
+
+const MILLISECONDS_IN_SECOND = 1000;
 
 /* UI components */
 
@@ -62,19 +61,33 @@ const firmwareDisplays = [firmwareVersionDisplay, firmwareDescriptionDisplay];
 /* Store version number for packet size checks and description for compatibility check */
 
 var firmwareVersion = '0.0.0';
+
 var firmwareDescription = '-';
 
-/* Whether firmware description warning has been shown */
+/* If the ID of the current device differs from the previous one, then warning messages can be reset */
 
-var warningShown = false;
+let previousID = '';
 
-/* Application packet from the device */
+/* Indicate whether the firmware should be updated */
 
-var packet = null;
+let updateRecommended = false;
+
+/* Whether or not a warning about the version number has been displayed for this device */
+
+let versionWarningShown = false;
+
+/* Whether or not a warning about the firmware has been displayed for this device */
+
+let firmwareWarningShown = false;
 
 /* Whether or not communication with device is currently happening */
 
-var communicating = false;
+let communicating = false;
+
+/* Communication constants */
+
+const MAXIMUM_RETRIES = 10;
+const DEFAULT_RETRY_INTERVAL = 100;
 
 /* Compare two semantic versions and return true if older */
 
@@ -82,8 +95,8 @@ function isOlderSemanticVersion (aVersion, bVersion) {
 
     for (let i = 0; i < aVersion.length; i++) {
 
-        const aVersionNum = aVersion[i];
-        const bVersionNum = bVersion[i];
+        const aVersionNum = parseInt(aVersion[i]);
+        const bVersionNum = parseInt(bVersion[i]);
 
         if (aVersionNum > bVersionNum) {
 
@@ -101,144 +114,225 @@ function isOlderSemanticVersion (aVersion, bVersion) {
 
 }
 
-/* Request, receive and handle packet containing the application data */
 
-function requestPacket () {
+/* Utility functions */
 
-    audiomoth.getPacket(function (err, pack) {
+async function callWithRetry (funcSync, argument, milliseconds, repeats) {
 
-        if (communicating) return;
+    let result;
 
-        if (err || pack == null) {
+    let attempt = 0;
 
-            disableFirmwareDisplay();
-            disablePacketDisplay();
-            disableButton();
+    while (attempt < repeats) {
 
-        } else {
+        try {
 
-            packet = pack;
-
-            usePacketValues();
-
-        }
-
-    });
-
-}
-/* Request, receive and handle packet containing the current firmware version and check the version/description to see if a warning message should be shown */
-
-function requestFirmwareVersion () {
-
-    audiomoth.getFirmwareVersion(function (err, versionArr) {
-
-        if (communicating) return;
-
-        if (err || versionArr === null) {
-
-            if (err) {
-
-                console.error(err);
-
-            }
-
-            disableFirmwareDisplay();
-            disablePacketDisplay();
-            disableButton();
-
-        } else {
-
-            firmwareVersion = versionArr[0] + '.' + versionArr[1] + '.' + versionArr[2];
-
-            updateFirmwareDisplay(firmwareVersion, firmwareDescription);
-
-            enableFirmwareDisplay();
-
-            const classification = constants.getFirmwareClassification(firmwareDescription);
-
-            if (classification === constants.FIRMWARE_OFFICIAL_RELEASE || classification === constants.FIRMWARE_OFFICIAL_RELEASE_CANDIDATE) {
-
-                requestPacket();
+            if (argument) {
+                
+                result = await funcSync(argument);
 
             } else {
 
-                if (!warningShown) {
-
-                    warningShown = true;
-
-                    setTimeout(function() {
-
-                        dialog.showMessageBoxSync(BrowserWindow.getFocusedWindow(), {
-                            type: 'warning',
-                            title: "Firmware Not Recognised",
-                            message: "This app only works with the AudioMoth-USB-Microphone firmware."
-                        });
-
-                    }, 100);
-
-                }
-
-                enableFirmwareDisplay();
-                disablePacketDisplay();
-                disableButton();
+                result = await funcSync();
 
             }
+
+            break;
+
+        } catch (e) {
+
+            const interval = milliseconds / 2 + milliseconds / 2 * Math.random();
+
+            await delay(interval);
+
+            attempt += 1;
 
         }
 
-    });
+    }
+
+    if (result === undefined) throw ('Error: Repeated attempts to access the device failed.');
+
+    if (result === null) throw ('No device detected');
+
+    return result;
 
 }
 
-/* Request, receive and handle the packet containing the description of the current firmware */
+async function delay (milliseconds) {
 
-function requestFirmwareDescription () {
+    return new Promise(resolve => setTimeout(resolve, milliseconds));
 
-    audiomoth.getFirmwareDescription(function (err, description) {
+}
 
-        if (communicating) return;
+/* Promisified versions of AudioMoth-HID calls */
 
-        if (err || description === null || description === '') {
+const getFirmwareDescription = util.promisify(audiomoth.getFirmwareDescription);
 
-            warningShown = false;
+const getFirmwareVersion = util.promisify(audiomoth.getFirmwareVersion);
 
-            if (err) {
+const getPacket = util.promisify(audiomoth.getPacket);
 
-                console.error(err);
+const setPacket = util.promisify(audiomoth.setPacket);
 
-            }
+const getID = util.promisify(audiomoth.getID);
 
-            disableFirmwareDisplay();
-            disablePacketDisplay();
-            disableButton();
+/* Device interaction functions */
+
+async function getAudioMothPacket () {
+
+    try {
+
+        /* Read from AudioMoth */
+
+        const id = await callWithRetry(getID, null, DEFAULT_RETRY_INTERVAL, MAXIMUM_RETRIES);
+
+        const description = await callWithRetry(getFirmwareDescription, null, DEFAULT_RETRY_INTERVAL, MAXIMUM_RETRIES);
+
+        const versionArr = await callWithRetry(getFirmwareVersion, null, DEFAULT_RETRY_INTERVAL, MAXIMUM_RETRIES);
+
+        const packet = await callWithRetry(getPacket, null, DEFAULT_RETRY_INTERVAL, MAXIMUM_RETRIES);
+
+        /* No exceptions have occurred so update display */
+
+        if (id !== previousID) {
+
+            firmwareWarningShown = false;
+
+            versionWarningShown = false;
+
+            previousID = id;
+
+        }
+
+        firmwareDescription = description;
+ 
+        firmwareVersion = versionArr[0] + '.' + versionArr[1] + '.' + versionArr[2];
+
+        const supported = checkVersionCompatibility();
+
+        updateFirmwareDisplay(firmwareVersion, firmwareDescription);
+
+        enableFirmwareDisplay();
+
+        if (supported) {
+
+            if (communicating === false) usePacketValues(packet);
 
         } else {
 
-            firmwareDescription = description;
+            disablePacketDisplay();
 
-            requestFirmwareVersion();
+            clearPacketDisplay();
+
+            disableButton();
 
         }
 
-    });
+    } catch (e) {
+
+        /* Problem reading from AudioMoth or no AudioMoth */
+
+        disableFirmwareDisplay();
+
+        disablePacketDisplay();
+
+        disableButton();
+
+    }
+
+    const milliseconds = Date.now() % MILLISECONDS_IN_SECOND;
+
+    let delay = MILLISECONDS_IN_SECOND / 2 - milliseconds;
+
+    if (delay < 0) delay += MILLISECONDS_IN_SECOND;
+
+    setTimeout(getAudioMothPacket, delay);
 
 }
 
-/* Request, receive and handle AudioMoth information packet */
 
-function getAudioMothPacket () {
+/* Check the version and description to see if the firmware is compatible or equivalent to an equivalent version of firmware */
 
-    if (communicating) return;
+function checkVersionCompatibility () {
 
-    requestFirmwareDescription();
+    /* This version array may be replaced if the firmware is custom with an equivalent official version */
 
-    setTimeout(getAudioMothPacket, 1000);
+    let trueVersionArr = firmwareVersion.split('.');
+
+    const classification = constants.getFirmwareClassification(firmwareDescription);
+
+    let versionWarningText, versionWarningTitle;
+
+    switch (classification) {
+
+    case constants.FIRMWARE_OFFICIAL_RELEASE:
+    case constants.FIRMWARE_OFFICIAL_RELEASE_CANDIDATE:
+    
+        versionWarningTitle = 'Firmware update recommended';
+        versionWarningText = 'Update to at least version ' + constants.latestFirmwareVersionString + ' of AudioMoth-USB-Microphone firmware to use all the features of this version of the AudioMoth USB Microphone App.';
+        
+        break;
+
+    case constants.FIRMWARE_UNSUPPORTED:
+
+        updateRecommended = false;
+
+        if (firmwareWarningShown === false) {
+
+            firmwareWarningShown = true;
+
+            setTimeout(function () {
+
+                dialog.showMessageBoxSync(BrowserWindow.getFocusedWindow(), {
+                    type: 'warning',
+                    title: 'Unsupported firmware',
+                    message: 'The firmware installed on your AudioMoth is not supported by the AudioMoth USB Microphone App.'
+                });
+
+            }, 100);
+
+        }
+
+        return false;
+
+    }
+
+    /* If OFFICIAL_RELEASE, OFFICIAL_RELEASE_CANDIDATE or CUSTOM_EQUIVALENT */
+
+    if (isOlderSemanticVersion(trueVersionArr, constants.latestFirmwareVersionArray)) {
+
+        updateRecommended = true;
+
+        if (versionWarningShown === false) {
+
+            versionWarningShown = true;
+
+            setTimeout(function () {
+
+                dialog.showMessageBoxSync(BrowserWindow.getFocusedWindow(), {
+                    type: 'warning',
+                    title: versionWarningTitle,
+                    message: versionWarningText
+                });
+
+            }, 100);
+
+        }
+
+    } else {
+
+        updateRecommended = false;
+
+    }
+
+    return true;
 
 }
 
 /* Fill in time/date, ID, battery state, firmware version */
 
-function usePacketValues () {
+function usePacketValues (packet) {
 
     const config = packetReader.read(packet.splice(1));
 
@@ -303,7 +397,79 @@ function usePacketValues () {
     additionalDisplay.textContent = textContent;
 
     enablePacketDisplay();
+
     enableButton();
+
+}
+
+/* Send configuration packet to AudioMoth */
+
+async function sendAudioMothPacket (packet) {
+
+    const showError = () => {
+
+        dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
+            type: 'error',
+            title: 'Configuration failed',
+            message: 'The connected AudioMoth did not respond correctly and the configuration may not have been applied. Please try again.'
+        });
+
+        configureButton.style.color = '';
+
+    };
+
+    try {
+
+        const data = await callWithRetry(setPacket, packet, DEFAULT_RETRY_INTERVAL, MAXIMUM_RETRIES);
+
+        /* Check if the firmware version of the device being configured has a known packet length */
+        /* If not, the length of the packet sent/received is used */
+
+        let packetLength = Math.min(packet.length, data.length - 1);
+
+        const firmwareVersionArr = firmwareVersion.split('.');
+
+        for (let k = 0; k < constants.packetLengthVersions.length; k++) {
+
+            const possibleFirmwareVersion = constants.packetLengthVersions[k].firmwareVersion;
+
+            if (isOlderSemanticVersion(firmwareVersionArr, possibleFirmwareVersion.split('.'))) {
+
+                break;
+
+            }
+
+            packetLength = constants.packetLengthVersions[k].packetLength;
+
+        }
+
+        console.log('Using packet length', packetLength);
+
+        /* Verify the packet sent was read correctly by the device by comparing it to the returned packet */
+
+        let matches = true;
+
+        for (let j = 0; j < packetLength; j++) {
+
+            if (packet[j] !== data[j + 1]) {
+
+                console.log('(' + j + ')  ' + packet[j] + ' - ' + data[j + 1]);
+
+                matches = false;
+
+                break;
+
+            }
+
+        }
+
+        if (matches === false) throw ('Packet does not match');
+
+    } catch (e) {
+
+        showError();
+
+    }
 
 }
 
@@ -319,103 +485,15 @@ function writeLittleEndianBytes (buffer, start, byteCount, value) {
 
 }
 
-/* Send configuration packet to AudioMoth */
-
-function sendPacket (packet) {
-
-    audiomoth.setPacket(packet, function (err, data) {
-
-        const showError = () => {
-
-            dialog.showMessageBox(BrowserWindow.getFocusedWindow(), {
-                type: 'error',
-                title: 'Configuration failed',
-                message: 'The connected AudioMoth did not respond correctly and the configuration may not have been applied. Please try again.'
-            });
-
-            configureButton.style.color = '';
-
-        };
-
-        if (err || data === null || data.length === 0) {
-
-            showError();
-
-        } else {
-
-            let matches = true;
-
-            /* Check if the firmware version of the device being configured has a known packet length */
-            /* If not, the length of the packet sent/received is used */
-
-            let packetLength = Math.min(packet.length, data.length - 1);
-
-            const firmwareVersionArr = firmwareVersion.split('.');
-
-            for (let k = 0; k < constants.packetLengthVersions.length; k++) {
-
-                const possibleFirmwareVersion = constants.packetLengthVersions[k].firmwareVersion;
-
-                if (isOlderSemanticVersion(firmwareVersionArr, possibleFirmwareVersion.split('.'))) {
-
-                    break;
-
-                }
-
-                packetLength = constants.packetLengthVersions[k].packetLength;
-
-            }
-
-            console.log('Using packet length', packetLength);
-
-            /* Verify the packet sent was read correctly by the device by comparing it to the returned packet */
-
-            for (let j = 0; j < packetLength; j++) {
-
-                if (packet[j] !== data[j + 1]) {
-
-                    console.log('(' + j + ')  ' + packet[j] + ' - ' + data[j + 1]);
-                    matches = false;
-
-                    break;
-
-                }
-
-            }
-
-            if (!matches) {
-
-                showError();
-
-            }
-
-        }
-
-    });
-
-}
+/* Build configuration packet */
 
 function configureDevice () {
-
-    communicating = true;
-
-    disablePacketDisplay();
-
-    configureButton.disabled = true;
 
     const USB_LAG = 20;
 
     const MINIMUM_DELAY = 100;
 
-    const MILLISECONDS_IN_SECOND = 1000;
-
-    setTimeout(function () {
-
-        communicating = false;
-
-        getAudioMothPacket();
-
-    }, 1500);
+    disablePacketDisplay();
 
     console.log('Configuring device');
 
@@ -520,12 +598,30 @@ function configureDevice () {
     packetReader.print(config);
 
     const now = new Date();
+
     const sendTimeDiff = sendTime.getTime() - now.getTime();
+
+    /* Calculate when to re-enable time display */
+
+    disableButton();
+
+    communicating = true;
+
+    const updateDelay = sendTimeDiff <= 0 ? MILLISECONDS_IN_SECOND : sendTimeDiff;
+
+    setTimeout(function () {
+
+        communicating = false;
+
+    }, updateDelay);
+
+    /* Either send immediately or wait until the transition */
 
     if (sendTimeDiff <= 0) {
 
         console.log('Sending...');
-        sendPacket(packet);
+
+        sendAudioMothPacket(packet);
 
     } else {
 
@@ -533,8 +629,7 @@ function configureDevice () {
 
         setTimeout(function () {
 
-            console.log('Sending...');
-            sendPacket(packet);
+            sendAudioMothPacket(packet);
 
         }, sendTimeDiff);
 
@@ -560,6 +655,11 @@ function disableFirmwareDisplay () {
 
 };
 
+function clearPacketDisplay() {
+
+    packetDisplays.forEach(display => display.textContent = '-');
+
+}
 
 function disablePacketDisplay () {
 
@@ -598,33 +698,15 @@ function enableButton () {
 
 function updateFirmwareDisplay (version, description) {
 
-    if (version !== firmwareVersionDisplay.value) {
+    firmwareVersionDisplay.textContent = version;
 
-        if (version === '0.0.0') {
+    if (updateRecommended) {
 
-            firmwareVersionDisplay.textContent = '-';
-
-        } else {
-
-            firmwareVersionDisplay.textContent = version;
-
-        }
+        firmwareVersionDisplay.textContent += ' (Update recommended)';
 
     }
 
-    if (description !== firmwareDescriptionDisplay.textContent) {
-
-        if (description === '') {
-
-            firmwareDescriptionDisplay.textContent = '-';
-
-        } else {
-
-            firmwareDescriptionDisplay.textContent = description;
-
-        }
-
-    }
+    firmwareDescriptionDisplay.textContent = description;
 
 };
 
