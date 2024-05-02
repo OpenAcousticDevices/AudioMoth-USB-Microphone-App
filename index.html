@@ -4,6 +4,7 @@
     <head>
         <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
         <link rel="stylesheet" href="node_modules/bootstrap-slider/dist/css/bootstrap-slider.css">
+        <link rel="stylesheet" as="style" href="index.css">
         <link id="uiCSS" rel="stylesheet" href="ui.css">
     </head>
 
@@ -18,7 +19,7 @@
                     <div style="border: #cdcdcd thin solid; width: 100%;">
                         <div class="row" style="margin-top: 8px;">
                             <div class="col-6" style="text-align: left;">
-                                <span id="samplerate-label" style="margin-left: 20px;" class="grey">Sample rate:</span>
+                                <span id="samplerate-label" class="grey leftElement">Sample rate:</span>
                             </div>
                             <div class="col-6" style="text-align: right;">
                                 <span id="samplerate-display" style="margin-right: 20px" class="grey">-</span>
@@ -26,26 +27,26 @@
                         </div>
                         <div class="row" style="margin-top: 5px; margin-bottom: 5px;">
                             <div class="col-6" style="text-align: left;">
-                                <span id="gain-label" style="margin-left: 20px;" class="grey">Gain:</span>
+                                <span id="gain-label" class="grey leftElement">Gain:</span>
                             </div>
                             <div class="col-6" style="text-align: right;">
-                                <span id="gain-display" style="margin-right: 20px;" class="grey">-</span>
+                                <span id="gain-display" class="grey rightElement">-</span>
                             </div>
                         </div>
                         <div class="row" style="margin-top: 5px; margin-bottom: 5px;">
                             <div class="col-6" style="text-align: left;">
-                                <span id="filter-setting-label" style="margin-left: 20px;" class="grey">Filter:</span>
+                                <span id="filter-setting-label" class="grey leftElement">Filter:</span>
                             </div>
                             <div class="col-6" style="text-align: right;">
-                                <span id="filter-setting-display" style="margin-right: 20px;" class="grey">-</span>
+                                <span id="filter-setting-display" class="grey rightElement">-</span>
                             </div>
                         </div>
                         <div class="row" style="margin-top: 5px; margin-bottom: 8px;">
                             <div class="col-2" style="text-align: left;">
-                                <span id="additional-label" style="margin-left: 20px;" class="grey">Advanced:</span>
+                                <span id="additional-label" class="grey leftElement">Advanced:</span>
                             </div>
                             <div class="col-10" style="text-align: right;">
-                                <span id="additional-display" style="margin-right: 20px;" class="grey">-</span>
+                                <span id="additional-display" class="grey rightElement">-</span>
                             </div>
                         </div>
                     </div>
@@ -61,18 +62,26 @@
                     <div style="border: #cdcdcd thin solid; width: 100%;">
                         <div class="row" style="margin-top: 8px;">
                             <div class="col-6" style="text-align: left;">
-                                <span id="firmware-description-label" style="margin-left: 20px;" class="grey">Firmware description:</span>
+                                <span id="id-label" class="grey leftElement">Device ID:</span>
                             </div>
                             <div class="col-6" style="text-align: right;">
-                                <span id="firmware-description-display" style="margin-right: 20px;" class="grey">-</span>
+                                <span id="id-display" style="border: none;" class="grey rightElement">-</span>
+                            </div>
+                        </div>
+                        <div class="row" style="margin-top: 5px; margin-bottom: 5px;">
+                            <div class="col-6" style="text-align: left;">
+                                <span id="firmware-description-label" class="grey leftElement">Firmware description:</span>
+                            </div>
+                            <div class="col-6" style="text-align: right;">
+                                <span id="firmware-description-display" class="grey rightElement">-</span>
                             </div>
                         </div>
                         <div class="row" style="margin-top: 5px; margin-bottom: 8px;">
                             <div class="col-6" style="text-align: left;">
-                                <span id="firmware-version-label" style="margin-left: 20px;" class="grey">Firmware version:</span>
+                                <span id="firmware-version-label" class="grey leftElement">Firmware version:</span>
                             </div>
                             <div class="col-6" style="text-align: right;">
-                                <span id="firmware-version-display" style="margin-right: 20px;" class="grey">-</span>
+                                <span id="firmware-version-display" class="grey rightElement">-</span>
                             </div>
                         </div>
                     </div>
@@ -195,26 +204,19 @@
                 <div class="col-12" style="text-align: center; padding-bottom: 8px; padding-left: 12px; padding-right: 12px;">
 
                     <div style="border: #cdcdcd thin solid; width: 100%;">
-                        <div class="row" style="margin-top: 8px;">
-                            <div class="col-8" style="text-align: left;">
-                                <span class="settings-text" style="margin-left: 17px;">Enable filtering:</span>
-                            </div>
-                            <div class="col-4" style="text-align: right;">
-                                <input class="settings-inputs" id="filter-checkbox" type="checkbox" style="margin-right: 16px;">
-                            </div>
-                        </div>
+                            
                         <div class="row" style="margin-top: 8px;">
                             <div class="col-12">
-                                <div style="margin-left: 10px; margin-right: 4px">
-                                    <table class="table" style="margin-bottom: 4px;" title="Type of filter.">
+                                <div style="margin-left: 8px; margin-right: 4px">
+                                    <table class="table" aria-hidden="true" style="margin-bottom: 4px;" title="Type of frequency filter." id="filter-type-table">
                                         <tr class="settings-text" style="font-size: 12px;">
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px"></td>
-                                            <td align="center" style="padding: 0px" name="filter-radio-label">Low</td>                     
+                                            <td align="center" style="padding: 0px; width: 161px;"></td>
+                                            <td align="center" style="padding: 0px; width: 32px;"></td>
+                                            <td align="center" style="padding: 0px; width: 32px;"></td>
+                                            <td align="center" style="padding: 0px; width: 32px;"></td>
+                                            <td align="center" style="padding: 0px; width: 32px;"></td>
+                                            <td align="center" style="padding: 0px" name="filter-radio-label">None</td>                
+                                            <td align="center" style="padding: 0px" name="filter-radio-label">Low</td>                
                                             <td align="center" style="padding: 0px" name="filter-radio-label">Band</td>
                                             <td align="center" style="padding: 0px" name="filter-radio-label">High</td>
                                         </tr>
@@ -224,59 +226,82 @@
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
-                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px"></td>
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="0" name="filter-radio">
+                                                <input type="radio" value="3" name="filter-radio" aria-label="Frequency filter type none" checked>
                                             </td>                        
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="1" name="filter-radio" checked>
+                                                <input type="radio" value="0" name="filter-radio" aria-label="Frequency filter type low-pass">
                                             </td>
                                             <td align="center" style="padding-top: 0px; padding-bottom: 0px">
-                                                <input class="settings-inputs" type="radio" value="2" name="filter-radio">
+                                                <input type="radio" value="1" name="filter-radio" aria-label="Frequency filter type band-pass">
                                             </td>
+                                            <td align="center" style="padding-top: 0px; padding-bottom: 0px">
+                                                <input type="radio" value="2" name="filter-radio" aria-label="Frequency filter type high-pass">
+                                            </td>   
                                         </tr>
                                     </table>
                                 </div>
                             </div>
                         </div>
+            
+                        <!-- Disabled filter -->
+                        <div class="row grey" id="disabled-row" style="margin-top: 8px; margin-bottom: 8px; display: flex; align-items: center;">
+                            <div class="col-2" style="text-align: left; padding-right: 0px;">
+                                <span class="settings-text" id="disabled-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
+                            </div>
+                            <div id="disabled-filter-slider-holder" class="col-8 config-slider" title="The low and high cut-off frequencies of the disabled filter." style="padding-left: 0px; padding-right: 0px;">
+                                <input id="disabled-filter-slider" data-slider-id="disabled-filter-slider" type="text" class="span2" data-slider-value="0" data-slider-tooltip="hide" style="width: 370px;">
+                            </div>
+                            <div class="col-2" style="text-align: right;">
+                                <span class="settings-text" id="disabled-filter-max-label" style="font-weight: bold; padding-right: 18px;">24kHz</span>
+                            </div>
+                        </div>
+                    
+                        <!-- High-pass filter -->
                         <div class="row" id="high-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="high-pass-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
-                            <div class="col-8" title="The cut-off frequency of the high-pass filter." style="padding-left: 0px; padding-right: 0px;">
-                                <input class="settings-inputs" id="high-pass-filter-slider" data-slider-id="high-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="192000" data-slider-tooltip="hide" data-slider-step="100" data-slider-value="144000" style="width: 370px;">
+                            <div id="high-pass-filter-slider-holder" class="col-8 config-slider" title="The cut-off frequency of the high-pass filter." style="padding-left: 0px; padding-right: 0px;">
+                                <input id="high-pass-filter-slider" data-slider-id="high-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24000" data-slider-step="100" data-slider-value="18000" data-slider-selection="after" data-slider-tooltip="hide" style="width: 370px;">
                             </div>
                             <div class="col-2" style="text-align: right;">
-                                <span class="settings-text" id="high-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">192kHz</span>
+                                <span class="settings-text" id="high-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">24kHz</span>
                             </div>
                         </div>
-                        <div class="row" id="low-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: flex; align-items: center;">
+                    
+                        <!-- Low-pass filter -->
+                        <div class="row" id="low-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="low-pass-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
-                            <div class="col-8" title="The cut-off frequency of the low-pass filter." style="padding-left: 0px; padding-right: 0px;">
-                                <input class="settings-inputs" id="low-pass-filter-slider" data-slider-id="low-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="192000" data-slider-tooltip="hide" data-slider-step="100" data-slider-value="48000" style="width: 370px;">
+                            <div id="low-pass-filter-slider-holder" class="col-8 config-slider" title="The cut-off frequency of the low-pass filter." style="padding-left: 0px; padding-right: 0px;">
+                                <input id="low-pass-filter-slider" data-slider-id="low-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24000" data-slider-step="100" data-slider-value="6000" data-slider-selection="before" data-slider-tooltip="hide" style="width: 370px;">
                             </div>
                             <div class="col-2" style="text-align: right;">
-                                <span class="settings-text" id="low-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">192kHz</span>
+                                <span class="settings-text" id="low-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">24kHz</span>
                             </div>
                         </div>
+                    
+                        <!-- Band-pass filter -->
                         <div class="row" id="band-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="band-pass-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
-                            <div class="col-8" title="The low and high cut-off frequencies of the band-pass filter." style="padding-left: 0px; padding-right: 0px;">
-                                <input class="settings-inputs" id="band-pass-filter-slider" data-slider-id="band-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="192000" data-slider-tooltip="hide" data-slider-step="100" data-slider-value="[48000,144000]" style="width: 370px;">
+                            <div id="band-pass-filter-slider-holder" class="col-8 config-slider" title="The low and high cut-off frequencies of the band-pass filter." style="padding-left: 0px; padding-right: 0px;">
+                                <input id="band-pass-filter-slider" data-slider-id="band-pass-filter-slider" type="text" class="span2" value="" data-slider-min="0" data-slider-max="24000" data-slider-step="100" data-slider-value="[6000,18000]" data-slider-selection="before" data-slider-tooltip="hide" style="width: 370px;">
                             </div>
                             <div class="col-2" style="text-align: right;">
-                                <span class="settings-text" id="band-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">192kHz</span>
+                                <span class="settings-text" id="band-pass-filter-max-label" style="font-weight: bold; padding-right: 18px;">24kHz</span>
                             </div>
                         </div>
+                    
                         <div class="row" style="margin-top: 8px; margin-bottom: 8px;">
                             <div class="col-12" style="margin-left: 16px;">
-                                <label class="settings-text" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Samples will be filtered to frequencies above 0.0 kHz.</label>
+                                <label class="settings-text" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Recordings will not be filtered.</label>
                             </div>
                         </div>
+                    
                     </div>
 
                 </div>

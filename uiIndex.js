@@ -14,7 +14,7 @@ const packetReader = require('./packetReader.js');
 
 const util = require('util');
 const electron = require('electron');
-const { dialog, Menu, BrowserWindow } = require('@electron/remote');
+const { dialog, Menu, BrowserWindow, clipboard } = require('@electron/remote');
 
 const ui = require('./ui.js');
 
@@ -31,6 +31,9 @@ const MILLISECONDS_IN_SECOND = 1000;
 /* UI components */
 
 const applicationMenu = Menu.getApplicationMenu();
+
+const idDisplay = document.getElementById('id-display');
+const idLabel = document.getElementById('id-label');
 
 const firmwareVersionDisplay = document.getElementById('firmware-version-display');
 const firmwareVersionLabel = document.getElementById('firmware-version-label');
@@ -55,8 +58,8 @@ const configureButton = document.getElementById('configure-button');
 const packetLabels = [samplerateLabel, gainLabel, filterSettingLabel, additionalLabel];
 const packetDisplays = [samplerateDisplay, gainDisplay, filterSettingDisplay, additionalDisplay];
 
-const firmwareLabels = [firmwareVersionLabel, firmwareDescriptionLabel];
-const firmwareDisplays = [firmwareVersionDisplay, firmwareDescriptionDisplay];
+const firmwareLabels = [firmwareVersionLabel, firmwareDescriptionLabel, idLabel];
+const firmwareDisplays = [firmwareVersionDisplay, firmwareDescriptionDisplay, idDisplay];
 
 /* Store version number for packet size checks and description for compatibility check */
 
@@ -206,10 +209,12 @@ async function getAudioMothPacket () {
         }
 
         firmwareDescription = description;
- 
+
         firmwareVersion = versionArr[0] + '.' + versionArr[1] + '.' + versionArr[2];
 
         const supported = checkVersionCompatibility();
+
+        updateIdDisplay(id);
 
         updateFirmwareDisplay(firmwareVersion, firmwareDescription);
 
@@ -641,6 +646,7 @@ function configureDevice () {
 
 function initialiseDisplay () {
 
+    idDisplay.textContent = '-';
     firmwareVersionDisplay.textContent = '-';
     firmwareDescriptionDisplay.textContent = '-';
 
@@ -696,6 +702,14 @@ function enableButton () {
 
 /* Insert retrieved values into device information display */
 
+function updateIdDisplay (deviceId) {
+
+    applicationMenu.getMenuItemById('copyid').enabled = true;
+
+    idDisplay.textContent = deviceId;
+
+}
+
 function updateFirmwareDisplay (version, description) {
 
     firmwareVersionDisplay.textContent = version;
@@ -708,7 +722,25 @@ function updateFirmwareDisplay (version, description) {
 
     firmwareDescriptionDisplay.textContent = description;
 
-};
+}
+
+function copyDeviceID () {
+
+    const id = idDisplay.textContent;
+
+    clipboard.writeText(id);
+
+    idDisplay.style.color = 'green';
+
+    setTimeout(() => {
+
+        idDisplay.style.color = '';
+
+    }, 2000);
+
+}
+
+electron.ipcRenderer.on('copy-id', copyDeviceID);
 
 function toggleNightMode () {
 
@@ -767,6 +799,8 @@ electron.ipcRenderer.on('update-check', function () {
 });
 
 /* Prepare UI */
+
+idDisplay.addEventListener('click', copyDeviceID);
 
 disableFirmwareDisplay();
 disablePacketDisplay();

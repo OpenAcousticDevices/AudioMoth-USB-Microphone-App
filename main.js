@@ -123,17 +123,17 @@ function toggleNightMode () {
 app.on('ready', function () {
 
     let windowWidth = 565;
-    let windowHeight = 672;
+    let windowHeight = 670;
 
     if (process.platform === 'linux') {
 
         windowWidth = 560;
-        windowHeight = 653;
+        windowHeight = 649;
 
     } else if (process.platform === 'darwin') {
 
         windowWidth = 560;
-        windowHeight = 653;
+        windowHeight = 651;
 
     }
 
@@ -157,6 +157,18 @@ app.on('ready', function () {
     const menuTemplate = [{
         label: 'File',
         submenu: [{
+            id: 'copyid',
+            label: 'Copy Device ID',
+            accelerator: 'CommandOrControl+I',
+            click: () => {
+
+                mainWindow.webContents.send('copy-id');
+
+            },
+            enabled: false
+        }, {
+            type: 'separator'
+        }, {
             type: 'checkbox',
             id: 'nightmode',
             label: 'Night Mode',

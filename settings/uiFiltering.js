@@ -14,10 +14,13 @@ const filterTypeLabel = document.getElementById('filter-type-label');
 const filterRadioButtons = document.getElementsByName('filter-radio');
 const filterRadioLabels = document.getElementsByName('filter-radio-label');
 
+const disabledRow = document.getElementById('disabled-row');
 const highPassRow = document.getElementById('high-pass-row');
 const lowPassRow = document.getElementById('low-pass-row');
 const bandPassRow = document.getElementById('band-pass-row');
 
+const disabledMaxLabel = document.getElementById('disabled-filter-max-label');
+const disabledMinLabel = document.getElementById('disabled-filter-min-label');
 const bandPassMaxLabel = document.getElementById('band-pass-filter-max-label');
 const bandPassMinLabel = document.getElementById('band-pass-filter-min-label');
 const lowPassMaxLabel = document.getElementById('low-pass-filter-max-label');
@@ -25,7 +28,9 @@ const lowPassMinLabel = document.getElementById('low-pass-filter-min-label');
 const highPassMaxLabel = document.getElementById('high-pass-filter-max-label');
 const highPassMinLabel = document.getElementById('high-pass-min-label');
 
-const filterCheckbox = document.getElementById('filter-checkbox');
+const disabledFilterSliderHolder = document.getElementById('disabled-filter-slider-holder');
+const disabledFilterSlider = new Slider('#disabled-filter-slider', {});
+
 const highPassFilterSlider = new Slider('#high-pass-filter-slider', {});
 const lowPassFilterSlider = new Slider('#low-pass-filter-slider', {});
 const bandPassFilterSlider = new Slider('#band-pass-filter-slider', {});
@@ -35,6 +40,7 @@ const filterLabel = document.getElementById('filter-label');
 /* Only scale filter sliders if the filter has been enabled this session */
 var filterHasBeenEnabled = false;
 
+const FILTER_NONE = 3;
 const FILTER_LOW = 0;
 const FILTER_BAND = 1;
 const FILTER_HIGH = 2;
@@ -106,7 +112,11 @@ function updateFilterSliders () {
 
     }
 
-    previousSelectionType = newSelectionType;
+    if (newSelectionType !== FILTER_NONE) {
+
+        previousSelectionType = newSelectionType;
+
+    }
 
 }
 
@@ -114,18 +124,14 @@ function updateFilterSliders () {
 
 function updateFilterLabel () {
 
-    if (!filterCheckbox.checked) {
-
-        return;
-
-    }
-
     let currentBandPassLower, currentBandPassHigher, currentHighPass, currentLowPass;
 
     const filterIndex = getSelectedRadioValue('filter-radio');
 
     switch (filterIndex) {
 
+    case FILTER_NONE:
+        return;
     case FILTER_HIGH:
         currentHighPass = highPassFilterSlider.getValue() / 1000;
         filterLabel.textContent = 'Samples will be filtered to frequencies above ' + currentHighPass.toFixed(1) + ' kHz.';
@@ -172,48 +178,59 @@ function setBandPass (lowerSliderValue, higherSliderValue) {
 }
 
 /* Exported functions for setting values */
+function setFilters (enabled, lowerSliderValue, higherSliderValue, filterType) {
 
-exports.setFilters = (enabled, lowerSliderValue, higherSliderValue, filterType) => {
+    passFiltersObserved = enabled;
 
-    filterCheckbox.checked = enabled;
+    let filterTypeIndex = FILTER_NONE;
 
-    filterHasBeenEnabled = enabled;
+    setLowPassSliderValue(higherSliderValue);
+    setHighPassSliderValue(lowerSliderValue);
+    setBandPass(lowerSliderValue, higherSliderValue);
 
-    if (enabled) {
+    switch (filterType) {
 
-        switch (filterType) {
+    case 'low':
+        filterTypeIndex = FILTER_LOW;
+        break;
 
-        case FILTER_LOW:
-            setLowPassSliderValue(higherSliderValue);
-            break;
+    case 'high':
+        filterTypeIndex = FILTER_HIGH;
+        break;
 
-        case FILTER_HIGH:
-            setHighPassSliderValue(lowerSliderValue);
-            break;
-
-        case FILTER_BAND:
-            setBandPass(lowerSliderValue, higherSliderValue);
-            break;
-
-        }
-
-        for (let i = 0; i < filterRadioButtons.length; i++) {
-
-            filterRadioButtons[i].checked = (i === filterType);
-
-        }
-
-        updateFilterLabel();
+    case 'band':
+        filterTypeIndex = FILTER_BAND;
+        break;
 
     }
 
-};
+    for (let i = 0; i < filterRadioButtons.length; i++) {
+
+        if (parseInt(filterRadioButtons[i].value) === filterTypeIndex) {
+
+            filterRadioButtons[i].checked = true;
+
+        }
+
+    }
+
+    updateFilterLabel();
+
+}
+
+exports.setFilters = setFilters;
 
 /* External functions for obtaining values */
 
+/**
+ * Is pre-threshold filtering enabled
+ * @returns Boolean reflecting if pre-threshold filtering is enabled
+ */
 exports.filteringIsEnabled = () => {
 
-    return filterCheckbox.checked;
+    const filterIndex = getFilterRadioValue();
+
+    return filterIndex !== FILTER_NONE;
 
 };
 
@@ -257,82 +274,55 @@ exports.getHigherSliderValue = () => {
 
 };
 
+function getFilterRadioValue () {
+
+    return getSelectedRadioValue('filter-radio');
+
+}
+
 /* Check if the filtering UI should be enabled and update accordingly */
 
 function updateFilterUI () {
 
-    const filterIndex = getSelectedRadioValue('filter-radio');
+    const filterIndex = getFilterRadioValue();
 
     switch (filterIndex) {
 
-        case FILTER_LOW:
-            lowPassRow.style.display = 'flex';
-            highPassRow.style.display = 'none';
-            bandPassRow.style.display = 'none';
-            break;
-        case FILTER_HIGH:
-            lowPassRow.style.display = 'none';
-            highPassRow.style.display = 'flex';
-            bandPassRow.style.display = 'none';
-            break;
-        case FILTER_BAND:
-            lowPassRow.style.display = 'none';
-            highPassRow.style.display = 'none';
-            bandPassRow.style.display = 'flex';
-            break;
+    case FILTER_NONE:
+        disabledRow.style.display = 'flex';
+        lowPassRow.style.display = 'none';
+        highPassRow.style.display = 'none';
+        bandPassRow.style.display = 'none';
+        break;
+    case FILTER_LOW:
+        disabledRow.style.display = 'none';
+        lowPassRow.style.display = 'flex';
+        highPassRow.style.display = 'none';
+        bandPassRow.style.display = 'none';
+        break;
+    case FILTER_HIGH:
+        disabledRow.style.display = 'none';
+        lowPassRow.style.display = 'none';
+        highPassRow.style.display = 'flex';
+        bandPassRow.style.display = 'none';
+        break;
+    case FILTER_BAND:
+        disabledRow.style.display = 'none';
+        lowPassRow.style.display = 'none';
+        highPassRow.style.display = 'none';
+        bandPassRow.style.display = 'flex';
+        break;
 
     }
 
-    if (filterCheckbox.checked) {
+    if (filterIndex !== FILTER_NONE) {
 
-        filterTypeLabel.classList.remove('grey');
-
-        for (let i = 0; i < filterRadioButtons.length; i++) {
-
-            filterRadioButtons[i].classList.remove('grey');
-            filterRadioButtons[i].disabled = false;
-            filterRadioLabels[i].classList.remove('grey');
-
-        }
-
-        bandPassFilterSlider.enable();
-        lowPassFilterSlider.enable();
-        highPassFilterSlider.enable();
-
-        bandPassMaxLabel.classList.remove('grey');
-        bandPassMinLabel.classList.remove('grey');
-        lowPassMaxLabel.classList.remove('grey');
-        lowPassMinLabel.classList.remove('grey');
-        highPassMaxLabel.classList.remove('grey');
-        highPassMinLabel.classList.remove('grey');
-
-        filterLabel.classList.remove('grey')
+        filterLabel.classList.remove('grey');
 
     } else {
 
-        filterTypeLabel.classList.add('grey');
-
-        for (let i = 0; i < filterRadioButtons.length; i++) {
-
-            filterRadioButtons[i].classList.add('grey');
-            filterRadioButtons[i].disabled = true;
-            filterRadioLabels[i].classList.add('grey');
-
-        }
-
-        bandPassFilterSlider.disable();
-        lowPassFilterSlider.disable();
-        highPassFilterSlider.disable();
-
-        bandPassMaxLabel.classList.add('grey');
-        bandPassMinLabel.classList.add('grey');
-        lowPassMaxLabel.classList.add('grey');
-        lowPassMinLabel.classList.add('grey');
-        highPassMaxLabel.classList.add('grey');
-        highPassMinLabel.classList.add('grey');
-
-        filterLabel.textContent = 'Samples will not be filtered.';
-        filterLabel.classList.add('grey')
+        filterLabel.textContent = 'Recordings will not be filtered.';
+        filterLabel.classList.add('grey');
 
     }
 
@@ -359,6 +349,7 @@ function sampleRateChange () {
 
     const labelText = (maxFreq / 1000) + 'kHz';
 
+    disabledMaxLabel.textContent = labelText;
     lowPassMaxLabel.textContent = labelText;
     highPassMaxLabel.textContent = labelText;
     bandPassMaxLabel.textContent = labelText;
@@ -445,22 +436,23 @@ function addRadioButtonListeners () {
 
 exports.prepareUI = () => {
 
-    addRadioButtonListeners();
+    // Disable interactions with disabled slider
 
-    filterCheckbox.addEventListener('change', () => {
+    disabledFilterSlider.disable();
 
-        updateFilterLabel();
+    const children = disabledFilterSliderHolder.getElementsByTagName('*');
 
-        if (filterCheckbox.checked) {
+    for (let i = 0; i < children.length; i++) {
 
-            filterHasBeenEnabled = true;
-            sampleRateChange();
+        if (children[i].style) {
+
+            children[i].style.cursor = 'not-allowed';
 
         }
 
-        updateFilterUI();
+    }
 
-    });
+    addRadioButtonListeners();
 
     bandPassFilterSlider.on('change', updateFilterLabel);
     lowPassFilterSlider.on('change', updateFilterLabel);

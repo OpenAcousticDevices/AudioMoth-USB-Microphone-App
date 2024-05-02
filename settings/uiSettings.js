@@ -62,3 +62,11 @@ exports.getSettings = () => {
     return settings;
 
 };
+
+/* Receive message from the menu about which amplitude threshold scale to use */
+
+electron.ipcRenderer.on('amplitude-threshold-scale', (e, indexSelected) => {
+
+    uiFiltering.setAmplitudeThresholdScaleIndex(indexSelected);
+
+});
