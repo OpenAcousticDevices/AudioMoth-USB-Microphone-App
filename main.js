@@ -23,6 +23,7 @@ const iconLocation = (process.platform === 'linux') ? '/build/icon.png' : '/buil
 const standardWindowSettings = {
     resizable: false,
     fullscreenable: false,
+    minimizable: false,
     autoHideMenuBar: true,
     icon: path.join(__dirname, iconLocation),
     useContentSize: true,
@@ -123,17 +124,17 @@ function toggleNightMode () {
 app.on('ready', function () {
 
     let windowWidth = 565;
-    let windowHeight = 670;
+    let windowHeight = 675;
 
     if (process.platform === 'linux') {
 
         windowWidth = 560;
-        windowHeight = 649;
+        windowHeight = 654;
 
     } else if (process.platform === 'darwin') {
 
         windowWidth = 560;
-        windowHeight = 651;
+        windowHeight = 656;
 
     }
 

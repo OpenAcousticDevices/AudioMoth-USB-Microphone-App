@@ -8,7 +8,7 @@ const constants = require('../constants.js');
 
 const Slider = require('bootstrap-slider');
 
-const FILTER_SLIDER_STEPS = [100, 100, 100, 100, 200, 500, 500, 1000];
+const FILTER_SLIDER_STEPS = {8000: 100, 16000: 100, 32000: 100, 48000: 100, 96000: 200, 192000: 500, 250000: 500, 384000: 1000};
 
 const filterTypeLabel = document.getElementById('filter-type-label');
 const filterRadioButtons = document.getElementsByName('filter-radio');
@@ -37,8 +37,8 @@ const bandPassFilterSlider = new Slider('#band-pass-filter-slider', {});
 
 const filterLabel = document.getElementById('filter-label');
 
-/* Only scale filter sliders if the filter has been enabled this session */
-var filterHasBeenEnabled = false;
+/* Only scale frequency sliders if they have been changed this session */
+let passFiltersObserved = false;
 
 const FILTER_NONE = 3;
 const FILTER_LOW = 0;
@@ -61,6 +61,15 @@ if (!Array.prototype.last) {
     };
 
 };
+
+/**
+ * If any of the frequency filter sliders have been observed
+ */
+exports.getPassFiltersObserved = () => {
+
+    return passFiltersObserved;
+
+}
 
 /* Retrieve the radio button selected from a group of named buttons */
 
@@ -338,13 +347,13 @@ function roundToSliderStep (value, step) {
 
 }
 
-/* Update UI according to new sample rate selection */
+/**
+ * Update UI according to new sample rate selection
+ * @param {bool} resetPassSliders Whether or not to set pass sliders back to defaults
+ * @param {int} sampleRate New sample rate
+ */
+function sampleRateChange (resetPassSliders, sampleRate) {
 
-function sampleRateChange () {
-
-    const sampleRateIndex = getSelectedRadioValue('sample-rate-radio');
-
-    const sampleRate = constants.configurations[sampleRateIndex].trueSampleRate * 1000;
     const maxFreq = sampleRate / 2;
 
     const labelText = (maxFreq / 1000) + 'kHz';
@@ -358,9 +367,11 @@ function sampleRateChange () {
     lowPassFilterSlider.setAttribute('max', maxFreq);
     bandPassFilterSlider.setAttribute('max', maxFreq);
 
-    highPassFilterSlider.setAttribute('step', FILTER_SLIDER_STEPS[sampleRateIndex]);
-    lowPassFilterSlider.setAttribute('step', FILTER_SLIDER_STEPS[sampleRateIndex]);
-    bandPassFilterSlider.setAttribute('step', FILTER_SLIDER_STEPS[sampleRateIndex]);
+    const filterSliderStep = FILTER_SLIDER_STEPS[sampleRate];
+
+    highPassFilterSlider.setAttribute('step', filterSliderStep);
+    lowPassFilterSlider.setAttribute('step', filterSliderStep);
+    bandPassFilterSlider.setAttribute('step', filterSliderStep);
 
     /* Get current slider values */
 
@@ -369,25 +380,9 @@ function sampleRateChange () {
     const currentLowPass = lowPassFilterSlider.getValue();
     const currentHighPass = highPassFilterSlider.getValue();
 
-    if (filterHasBeenEnabled) {
+    /* Reset pass sliders */
 
-        /* Validate current band-pass filter values */
-
-        const newBandPassLower = currentBandPassLower > maxFreq ? 0 : currentBandPassLower;
-        const newBandPassHigher = currentBandPassHigher > maxFreq ? maxFreq : currentBandPassHigher;
-        setBandPass(roundToSliderStep(Math.max(newBandPassHigher, newBandPassLower), FILTER_SLIDER_STEPS[sampleRateIndex]), roundToSliderStep(Math.min(newBandPassHigher, newBandPassLower), FILTER_SLIDER_STEPS[sampleRateIndex]));
-
-        /* Validate current low-pass filter value */
-
-        const newLowPass = currentLowPass > maxFreq ? maxFreq : currentLowPass;
-        setLowPassSliderValue(roundToSliderStep(newLowPass, FILTER_SLIDER_STEPS[sampleRateIndex]));
-
-        /* Validate current high-pass filter value */
-
-        const newHighPass = currentHighPass > maxFreq ? maxFreq : currentHighPass;
-        setHighPassSliderValue(roundToSliderStep(newHighPass, FILTER_SLIDER_STEPS[sampleRateIndex]));
-
-    } else {
+    if (resetPassSliders) {
 
         /* Set high/low-pass sliders to 1/4 and 3/4 of the bar if filtering has not yet been enabled */
 
@@ -396,17 +391,37 @@ function sampleRateChange () {
 
         /* Set band-pass filter values */
 
-        setBandPass(roundToSliderStep(newHighPassFreq, FILTER_SLIDER_STEPS[sampleRateIndex]), roundToSliderStep(newLowPassFreq, FILTER_SLIDER_STEPS[sampleRateIndex]));
+        setBandPass(roundToSliderStep(newHighPassFreq, FILTER_SLIDER_STEPS[sampleRate]), roundToSliderStep(newLowPassFreq, FILTER_SLIDER_STEPS[sampleRate]));
 
         /* Set low-pass filter value */
 
-        setLowPassSliderValue(roundToSliderStep(newHighPassFreq, FILTER_SLIDER_STEPS[sampleRateIndex]));
+        setLowPassSliderValue(roundToSliderStep(newHighPassFreq, FILTER_SLIDER_STEPS[sampleRate]));
 
         /* Set high-pass filter value */
 
-        setHighPassSliderValue(roundToSliderStep(newLowPassFreq, FILTER_SLIDER_STEPS[sampleRateIndex]));
+        setHighPassSliderValue(roundToSliderStep(newLowPassFreq, FILTER_SLIDER_STEPS[sampleRate]));
+
+    } else {
+
+        /* Validate current band-pass filter values */
+
+        const newBandPassLower = currentBandPassLower > maxFreq ? 0 : currentBandPassLower;
+        const newBandPassHigher = currentBandPassHigher > maxFreq ? maxFreq : currentBandPassHigher;
+        setBandPass(roundToSliderStep(Math.max(newBandPassHigher, newBandPassLower), FILTER_SLIDER_STEPS[sampleRate]), roundToSliderStep(Math.min(newBandPassHigher, newBandPassLower), FILTER_SLIDER_STEPS[sampleRate]));
+
+        /* Validate current low-pass filter value */
+
+        const newLowPass = currentLowPass > maxFreq ? maxFreq : currentLowPass;
+        setLowPassSliderValue(roundToSliderStep(newLowPass, FILTER_SLIDER_STEPS[sampleRate]));
+
+        /* Validate current high-pass filter value */
+
+        const newHighPass = currentHighPass > maxFreq ? maxFreq : currentHighPass;
+        setHighPassSliderValue(roundToSliderStep(newHighPass, FILTER_SLIDER_STEPS[sampleRate]));
 
     }
+
+    /* Update labels */
 
     updateFilterLabel();
 
@@ -425,6 +440,12 @@ function addRadioButtonListeners () {
             updateFilterUI();
             updateFilterSliders();
             updateFilterLabel();
+
+            if (filterRadioButtons[i].value !== FILTER_NONE) {
+
+                passFiltersObserved = true;
+
+            }
 
         });
 

@@ -12,6 +12,8 @@ const uiAdvanced = require('./uiAdvanced.js');
 const sampleRadioButtons = document.getElementsByName('sample-rate-radio');
 const gainRadioButtons = document.getElementsByName('gain-radio');
 
+const sampleRates = [8000, 16000, 32000, 48000, 96000, 192000, 250000, 384000];
+
 /* Add listeners to all radio buttons which update the life display */
 
 function addRadioButtonListeners () {
@@ -20,7 +22,13 @@ function addRadioButtonListeners () {
 
         sampleRadioButtons[i].addEventListener('change', function () {
 
-            uiFiltering.sampleRateChange();
+            const sampleRateIndex = parseInt(getSelectedRadioValue('sample-rate-radio'));
+
+            if (sampleRateIndex === i) {
+
+                uiFiltering.sampleRateChange(!uiFiltering.getPassFiltersObserved(), sampleRates[sampleRateIndex]);
+
+            }
 
         });
 
@@ -35,6 +43,9 @@ exports.prepareUI = () => {
     uiFiltering.prepareUI();
 
     addRadioButtonListeners();
+
+    const sampleRateIndex = parseInt(getSelectedRadioValue('sample-rate-radio'));
+    uiFiltering.sampleRateChange(!uiFiltering.getPassFiltersObserved(), sampleRates[sampleRateIndex]);
 
 };
 

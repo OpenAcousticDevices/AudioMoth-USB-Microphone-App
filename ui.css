@@ -17,14 +17,6 @@ body {
   border-radius: 4px;
 }
 
-#low-pass-filter-slider .slider-selection {
-  background: rgb(173, 189, 241);
-}
-
-#high-pass-filter-slider .slider-track {
-  background: rgb(173, 189, 241);
-}
-
-#band-pass-filter-slider .slider-selection {
+.slider-selection {
   background: rgb(173, 189, 241);
 }
