@@ -7,14 +7,12 @@
 
 'use strict';
 
-/* global document */
-
 const audiomoth = require('audiomoth-hid');
 const packetReader = require('./packetReader.js');
 
 const util = require('util');
 const electron = require('electron');
-const { dialog, Menu, BrowserWindow, clipboard } = require('@electron/remote');
+const {dialog, Menu, BrowserWindow, clipboard} = require('@electron/remote');
 
 const ui = require('./ui.js');
 
@@ -790,7 +788,7 @@ electron.ipcRenderer.on('update-check', function () {
 
         if (buttonIndex === 0) {
 
-            electron.shell.openExternal('https://www.openacousticdevices.info/applications');
+            electron.shell.openExternal('https://www.openacousticdevices.info/usb-microphone');
 
         }
 

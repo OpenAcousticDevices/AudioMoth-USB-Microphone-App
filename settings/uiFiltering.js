@@ -4,8 +4,6 @@
  * August 2021
  *****************************************************************************/
 
-const constants = require('../constants.js');
-
 const Slider = require('bootstrap-slider');
 
 const FILTER_SLIDER_STEPS = {8000: 100, 16000: 100, 32000: 100, 48000: 100, 96000: 200, 192000: 500, 250000: 500, 384000: 1000};
@@ -69,7 +67,7 @@ exports.getPassFiltersObserved = () => {
 
     return passFiltersObserved;
 
-}
+};
 
 /* Retrieve the radio button selected from a group of named buttons */
 

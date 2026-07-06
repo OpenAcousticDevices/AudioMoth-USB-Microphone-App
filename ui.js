@@ -6,16 +6,11 @@
 
 'use strict';
 
-/* global document */
-
 const {ipcRenderer} = require('electron');
-const { Menu } = require('@electron/remote');
 
 const nightMode = require('./nightMode.js');
 
 /* UI components */
-
-const applicationMenu = Menu.getApplicationMenu();
 
 /* Switch between display modes */
 

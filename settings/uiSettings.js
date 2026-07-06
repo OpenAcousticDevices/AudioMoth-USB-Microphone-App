@@ -4,6 +4,8 @@
  * August 2021
  *****************************************************************************/
 
+/* global electron */
+
 const uiFiltering = require('./uiFiltering.js');
 const uiAdvanced = require('./uiAdvanced.js');
 

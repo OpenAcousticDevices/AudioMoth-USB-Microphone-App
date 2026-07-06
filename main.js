@@ -6,16 +6,16 @@
 
 'use strict';
 
-const {app, Menu, shell, ipcMain, BrowserWindow} = require('electron');
+/* global process, __dirname */
 
-require('@electron/remote/main').initialize();
+const {app, Menu, shell, BrowserWindow} = require('electron');
+
+const remoteMain = require('@electron/remote/main');
+remoteMain.initialize();
+
+const electronDebug = require('electron-debug');
 
 const path = require('path');
-
-require('electron-debug')({
-    showDevTools: true,
-    devToolsMode: 'undocked'
-});
 
 var mainWindow, aboutWindow;
 
@@ -28,9 +28,9 @@ const standardWindowSettings = {
     icon: path.join(__dirname, iconLocation),
     useContentSize: true,
     webPreferences: {
-        enableRemoteModule: true,
+        contextIsolation: false,
         nodeIntegration: true,
-        contextIsolation: false
+        sandbox: false
     }
 };
 
@@ -75,13 +75,19 @@ function openAboutWindow () {
 
     }
 
-    const settings = generateSettings(windowWidth, windowHeight, 'About');
+    const settings = generateSettings(windowWidth, windowHeight, 'About AudioMoth Flash App');
     aboutWindow = new BrowserWindow(settings);
 
-    aboutWindow.setMenu(null);
-    aboutWindow.loadURL(path.join('file://', __dirname, '/about.html'));
-
     require('@electron/remote/main').enable(aboutWindow.webContents);
+
+    aboutWindow.setMenu(null);
+    aboutWindow.loadFile('about.html');
+
+    if (!app.isPackaged) {
+
+        electronDebug.openDevTools(aboutWindow);
+
+    }
 
     aboutWindow.on('close', (e) => {
 
@@ -94,16 +100,6 @@ function openAboutWindow () {
     aboutWindow.webContents.on('dom-ready', () => {
 
         mainWindow.webContents.send('poll-night-mode');
-
-    });
-
-    ipcMain.on('night-mode-poll-reply', (e, nightMode) => {
-
-        if (aboutWindow) {
-
-            aboutWindow.webContents.send('night-mode', nightMode);
-
-        }
 
     });
 
@@ -124,7 +120,7 @@ function toggleNightMode () {
 app.on('ready', function () {
 
     let windowWidth = 565;
-    let windowHeight = 675;
+    let windowHeight = 630;
 
     if (process.platform === 'linux') {
 
@@ -134,7 +130,7 @@ app.on('ready', function () {
     } else if (process.platform === 'darwin') {
 
         windowWidth = 560;
-        windowHeight = 656;
+        windowHeight = 687;
 
     }
 
@@ -149,9 +145,13 @@ app.on('ready', function () {
         webPreferences: {
             enableRemoteModule: true,
             nodeIntegration: true,
-            contextIsolation: false
+            contextIsolation: false,
+            backgroundThrottling: false
         }
     });
+
+    // TODO: This line fixes this issue: https://github.com/electron/electron/issues/51465 Check to see if still broken
+    mainWindow.setSize(windowWidth, windowHeight);
 
     require('@electron/remote/main').enable(mainWindow.webContents);
 
@@ -228,7 +228,15 @@ app.on('ready', function () {
 
     Menu.setApplicationMenu(menu);
 
-    mainWindow.loadURL(path.join('file://', __dirname, '/index.html'));
+    require('@electron/remote/main').enable(mainWindow.webContents);
+
+    mainWindow.loadFile('index.html');
+
+    if (!app.isPackaged) {
+
+        electronDebug.openDevTools(mainWindow);
+
+    }
 
 });
 

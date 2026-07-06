@@ -31,4 +31,4 @@ exports.isLowGainRangeEnabled = () => {
 
     return lowGainRangeCheckbox.checked;
 
-}
+};
