@@ -1,6 +1,6 @@
 {
   "name": "AudioMoth-Mic",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "description": "The configuration app for the AudioMoth USB microphone.",
   "main": "main.js",
   "author": "openacousticdevices.info <theteam@openacousticdevices.info>",
@@ -23,7 +23,10 @@
     "mac": {
       "hardenedRuntime": true,
       "entitlements": "build/entitlements.mac.inherit.plist",
-      "target": "dmg"
+      "target": {
+        "target": "dmg",
+        "arch": "universal"
+      }
     },
     "dmg": {
       "contents": [
@@ -60,8 +63,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "electron": "42.5.0",
-    "electron-builder": "^26.15.3",
+    "electron": "43.8.3",
+    "electron-builder": "^26.18.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0"
   },
