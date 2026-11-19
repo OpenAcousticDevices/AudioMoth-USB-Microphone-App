@@ -12,8 +12,9 @@
   "scripts": {
     "postinstall": "install-app-deps && node scripts/install-electron-binary.js",
     "start": "electron .",
-    "dist": "node builder.js",
-    "install-electron-binary": "node scripts/install-electron-binary.js"
+    "dist": "rimraf dist && node builder.js",
+    "install-electron-binary": "node scripts/install-electron-binary.js",
+    "sign": "xcrun notarytool submit dist/AudioMothUSBMicrophoneAppSetup${npm_package_version}.dmg --keychain-profile \"oad\" --wait && sudo xcrun stapler staple dist/AudioMothUSBMicrophoneAppSetup${npm_package_version}.dmg"
   },
   "build": {
     "asar": {
@@ -29,6 +30,7 @@
       }
     },
     "dmg": {
+      "title": "AudioMoth-Mic ${version}",
       "contents": [
         {
           "x": 110,
@@ -66,7 +68,8 @@
     "electron": "43.8.3",
     "electron-builder": "^26.18.0",
     "eslint": "^10.6.0",
-    "globals": "^17.7.0"
+    "globals": "^17.7.0",
+    "rimraf": "^6.1.4"
   },
   "dependencies": {
     "@electron/remote": "^2.1.3",

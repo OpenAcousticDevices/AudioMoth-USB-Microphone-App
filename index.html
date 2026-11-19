@@ -6,9 +6,22 @@
         <link rel="stylesheet" href="node_modules/bootstrap-slider/dist/css/bootstrap-slider.css">
         <link rel="stylesheet" as="style" href="index.css">
         <link id="uiCSS" rel="stylesheet" href="ui.css">
+        <title>AudioMoth USB Microphone App</title>
+
+        <!-- Hide sliders until loaded -->
+        <style>
+            .config-slider {
+                min-height: 26px;
+            }
+
+            body.sliders-loading .config-slider input,
+            body.sliders-loading .config-slider .slider {
+                visibility: hidden;
+            }
+        </style>
     </head>
 
-    <body style="font-size: 10pt; overflow-x:hidden; font-family: Helvetica, Arial, sans-serif;">
+    <body class="sliders-loading" style="font-size: 10pt; overflow-x:hidden; font-family: Helvetica, Arial, sans-serif;">
 
         <div class="container" style="padding: 8px;">
 
@@ -245,7 +258,7 @@
                         </div>
             
                         <!-- Disabled filter -->
-                        <div class="row grey" id="disabled-row" style="margin-top: 8px; margin-bottom: 8px; display: flex; align-items: center;">
+                        <div class="row grey" id="disabled-row" style="margin-top: 8px; margin-bottom: 4px; display: flex; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="disabled-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
@@ -253,12 +266,12 @@
                                 <input id="disabled-filter-slider" data-slider-id="disabled-filter-slider" type="text" class="span2" data-slider-value="0" data-slider-tooltip="hide" style="width: 370px;">
                             </div>
                             <div class="col-2" style="text-align: right;">
-                                <span class="settings-text" id="disabled-filter-max-label" style="font-weight: bold; padding-right: 18px;">24kHz</span>
+                                <span class="settings-text" id="disabled-filter-max-label" style="font-weight: bold; padding-right: 18px;">192kHz</span>
                             </div>
                         </div>
                     
                         <!-- High-pass filter -->
-                        <div class="row" id="high-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
+                        <div class="row" id="high-pass-row" style="margin-top: 8px; margin-bottom: 4px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="high-pass-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
@@ -271,7 +284,7 @@
                         </div>
                     
                         <!-- Low-pass filter -->
-                        <div class="row" id="low-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
+                        <div class="row" id="low-pass-row" style="margin-top: 8px; margin-bottom: 4px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="low-pass-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
@@ -284,7 +297,7 @@
                         </div>
                     
                         <!-- Band-pass filter -->
-                        <div class="row" id="band-pass-row" style="margin-top: 8px; margin-bottom: 8px; display: none; align-items: center;">
+                        <div class="row" id="band-pass-row" style="margin-top: 8px; margin-bottom: 4px; display: none; align-items: center;">
                             <div class="col-2" style="text-align: left; padding-right: 0px;">
                                 <span class="settings-text" id="band-pass-filter-min-label" style="margin-left: 16px; font-weight: bold;">0kHz</span>
                             </div>
@@ -296,9 +309,9 @@
                             </div>
                         </div>
                     
-                        <div class="row" style="margin-top: 8px; margin-bottom: 8px;">
+                        <div class="row" style="margin-bottom: 8px;">
                             <div class="col-12" style="margin-left: 16px;">
-                                <label class="settings-text" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Recordings will not be filtered.</label>
+                                <label class="settings-text grey" id="filter-label" style="width: 100%; resize:none; text-align: left; font-weight: normal;">Recordings will not be filtered.</label>
                             </div>
                         </div>
                     
@@ -358,6 +371,13 @@
         </div>
     </body>
 
+    <script>
+        window.addEventListener('load', () => {
+
+            document.body.classList.remove('sliders-loading');
+
+        });
+    </script>
     <script>
         window.jQuery = window.$ = require('jquery');
     </script>

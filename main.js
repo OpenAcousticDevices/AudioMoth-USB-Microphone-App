@@ -8,7 +8,7 @@
 
 /* global process, __dirname */
 
-const {app, Menu, shell, BrowserWindow} = require('electron');
+const {app, Menu, shell, BrowserWindow, ipcMain} = require('electron');
 
 const remoteMain = require('@electron/remote/main');
 remoteMain.initialize();
@@ -75,7 +75,7 @@ function openAboutWindow () {
 
     }
 
-    const settings = generateSettings(windowWidth, windowHeight, 'About AudioMoth Flash App');
+    const settings = generateSettings(windowWidth, windowHeight, 'About AudioMoth USB Microphone App');
     aboutWindow = new BrowserWindow(settings);
 
     require('@electron/remote/main').enable(aboutWindow.webContents);
@@ -100,6 +100,16 @@ function openAboutWindow () {
     aboutWindow.webContents.on('dom-ready', () => {
 
         mainWindow.webContents.send('poll-night-mode');
+
+    });
+
+    ipcMain.on('night-mode-poll-reply', (e, nightMode) => {
+
+        if (aboutWindow) {
+
+            aboutWindow.webContents.send('night-mode', nightMode);
+
+        }
 
     });
 
